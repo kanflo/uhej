@@ -68,9 +68,7 @@ def main():
     last_query = 0
     start_time = time.time()
 
-    while 1:
-        if time.time() - start_time > run_time_s:
-            break
+    while time.time() - start_time < run_time_s:
         if time.time() - last_query > query_interval_s:
             f = query(UDP, "*")
             sock.sendto(f, (MCAST_GRP, MCAST_PORT))
