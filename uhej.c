@@ -1,18 +1,18 @@
-/* 
+/*
  * The MIT License (MIT)
- * 
+ *
  * Copyright (c) 2017 Johan Kanflo (github.com/kanflo)
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -55,6 +55,9 @@
 #else // _NOESP
  #define ip_addr_t uint32_t
 #endif // _NOESP
+
+/** Start a task saying 'Hello' over and over again, for debugging */
+//#define UHEJ_HELLO_TASK
 
 #ifdef CONFIFG_HEJ_DEBUG
  #define _DBG(x) x
@@ -113,11 +116,9 @@ static uhej_service_desc_t* find_free_service(void)
 {
     for (int i = 0; i < MAX_SERVICES; i++) {
         if (!g_services[i].name[0]) {
-            printf("found free service at %d\n", i);
             return &g_services[i];
         }
     }
-    printf("found no free service\n");
     return NULL;
 }
 
@@ -150,7 +151,7 @@ static void dump_services(void)
         } else {
             printf("%d [empty]\n", i);
         }
-    }    
+    }
 }
 #endif //  _NOESP
 
@@ -184,7 +185,7 @@ static struct udp_pcb* mcast_join_group(char *group_ip, uint16_t group_port, voi
     bool status = false;
     struct udp_pcb *upcb;
 
-    printf("Joining mcast group %s:%d\n", group_ip, group_port);
+    _DBG(printf("Joining mcast group %s:%d\n", group_ip, group_port);)
     do {
         upcb = udp_new();
         if (!upcb) {
@@ -199,7 +200,6 @@ static struct udp_pcb* mcast_join_group(char *group_ip, uint16_t group_port, voi
         }
         if (!(netif->flags & NETIF_FLAG_IGMP)) {
             netif->flags |= NETIF_FLAG_IGMP;
-            printf("igmp_start\n");
             igmp_start(netif);
         }
         ip_addr_t ipgroup;
@@ -213,13 +213,13 @@ static struct udp_pcb* mcast_join_group(char *group_ip, uint16_t group_port, voi
     } while(0);
 
     if (status) {
-        printf("Join successs\n");
+        _DBG(printf("Join successs\n");)
         udp_recv(upcb, recv, upcb);
     } else {
         if (upcb) {
             udp_remove(upcb);
         }
-        upcb = NULL;   
+        upcb = NULL;
     }
     return upcb;
 }
@@ -267,7 +267,7 @@ static void decode_query_frame(uint8_t *buf, uint32_t len, struct udp_pcb *upcb)
     UNPACK_CSTR(name, MAX_SERVICE_NAME);
     UNPACK_END();
 UNPACK_ERROR_HANDLER:
-    printf("Error, query frame is corrupt\n");
+    printf("uhej error: query frame is corrupt\n");
     UNPACK_DONE();
 UNPACK_SUCCESS_HANDLER:
     UNPACK_DONE();
@@ -275,9 +275,9 @@ UNPACK_DONE_HANDLER:
     d = find_service(name, type); /** @todo: handle wildcard query */
     if (d || wildcard) {
         if (d) {
-            printf("Responding to query for %s service '%s'\n", g_service_names[type], name);
+            printf("uhej: responding to query for %s service '%s'\n", g_service_names[type], name);
         } else {
-            printf("Responding to wildcard query \n");
+            printf("uhej: responding to wildcard query \n");
         }
         uint8_t *buffer = (uint8_t*) malloc(MAX_ANNOUNCE_FRAME_SIZE);
         struct pbuf *p;
@@ -315,13 +315,13 @@ UNPACK_DONE_HANDLER:
         p = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
         ipaddr_aton(UHEJ_MCAST_GRP, &ipgroup);
         if (!p) {
-            printf("Failed to allocate %d byte transport buffer\n", len);
+            printf("uhej error: failed to allocate %d byte transport buffer\n", len);
         } else {
             memcpy(p->payload, buffer, len);
             /** @todo: do not send to mcasst group but to requesting client only */
             err_t err = udp_sendto(upcb, p, &ipgroup, UHEJ_MCAST_PORT);
             if (err < 0) {
-                printf("Error sending message: %s (%d)\n", lwip_strerr(err), err);
+                printf("uhej error: failed to send message: %s (%d)\n", lwip_strerr(err), err);
             }
             pbuf_free(p);
         }
@@ -398,14 +398,14 @@ static void uhej_receive_callback(void *arg, struct udp_pcb *upcb, struct pbuf *
   * @param arg user supplied argument from xTaskCreate
   * @retval None
   */
+#ifdef UHEJ_HELLO_TASK
 static void uhej_task(void *arg)
 {
+    struct udp_pcb *upcb = (struct udp_pcb*) arg;
     uint32_t message_count = 0;
     struct pbuf *p;
     ip_addr_t ipgroup;
     ipaddr_aton(UHEJ_MCAST_GRP, &ipgroup);
-    struct udp_pcb *upcb = mcast_join_group(UHEJ_MCAST_GRP, UHEJ_MCAST_PORT, uhej_receive_callback);
-
     while(1) {
         char msg[64];
         snprintf((char*)msg, sizeof(msg), "Hello #%u", message_count++);
@@ -425,8 +425,9 @@ static void uhej_task(void *arg)
         delay_ms(2000);
     }
 }
+#endif // UHEJ_HELLO_TASK
 
-/** @brief Required by LWIP for multicast 
+/** @brief Required by LWIP for multicast
   * @retval 32 bit random number
   */
 uint32_t my_rand(void)
@@ -441,8 +442,13 @@ uint32_t my_rand(void)
 bool uhej_server_init(void)
 {
     memset(g_services, 0, sizeof(g_services));
-    xTaskCreate(&uhej_task, "uhej_task", 1024, NULL, 4, NULL);
-    return true;
+    struct udp_pcb *upcb = mcast_join_group(UHEJ_MCAST_GRP, UHEJ_MCAST_PORT, uhej_receive_callback);
+#ifdef UHEJ_HELLO_TASK
+    if (upcb) {
+      xTaskCreate(&uhej_task, "uhej_task", 1024, (void*) upcb, 4, NULL);
+    }
+#endif // UHEJ_HELLO_TASK
+    return (upcb != NULL);
 }
 
 /**
@@ -489,7 +495,7 @@ bool uhej_announce_mcast(char *name, char *ip, uint16_t port)
 }
 
 /**
-  * @brief Remove announcement of UDP service 
+  * @brief Remove announcement of UDP service
   * @param name name of service
   * @retval true if succcessful
   */
@@ -499,7 +505,7 @@ bool uhej_cancel_udp(char *name)
 }
 
 /**
-  * @brief Remove announcement of TCP service 
+  * @brief Remove announcement of TCP service
   * @param name name of service
   * @retval true if succcessful
   */
@@ -509,7 +515,7 @@ bool uhej_cancel_tcp(char *name)
 }
 
 /**
-  * @brief Remove announcement of UDP multicast service 
+  * @brief Remove announcement of UDP multicast service
   * @param name name of service
   * @retval true if succcessful
   */
