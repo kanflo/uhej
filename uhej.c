@@ -93,7 +93,7 @@ char *g_service_names[] = { "UDP", "TCP", "MCAST" }; /** Must match uhej_service
 
 #define MAX_SERVICES      (8) /** Number of services we provide */
 #define MAX_SERVICE_NAME (16) /** Max service name length */
-//#define MAX_SUBSCRIBERS   (8) /** Max number of subscribers  @todo, when the subscription model is implemented */
+//#define MAX_SUBSCRIBERS   (8) /** Max number of subscribers  @todo When the subscription model is implemented */
 
 /** The service descriptor */
 typedef struct {
@@ -101,7 +101,7 @@ typedef struct {
     uhej_service_t type;
     uint16_t port;
     ip_addr_t ipgroup; /** Used for multicast services */
-//    ip_addr_t subscribers[MAX_SUBSCRIBERS]; // @todo, when the subscription model is implemented
+//    ip_addr_t subscribers[MAX_SUBSCRIBERS]; /** @todo  When the subscription model is implemented */
 } uhej_service_desc_t;
 
 /** The list of services provided */
@@ -272,7 +272,7 @@ UNPACK_ERROR_HANDLER:
 UNPACK_SUCCESS_HANDLER:
     UNPACK_DONE();
 UNPACK_DONE_HANDLER:
-    d = find_service(name, type); /** @todo: handle wildcard query */
+    d = find_service(name, type); /** @todo Handle wildcard query */
     if (d || wildcard) {
         if (d) {
             printf("uhej: responding to query for %s service '%s'\n", g_service_names[type], name);
@@ -318,7 +318,7 @@ UNPACK_DONE_HANDLER:
             printf("uhej error: failed to allocate %d byte transport buffer\n", len);
         } else {
             memcpy(p->payload, buffer, len);
-            /** @todo: do not send to mcasst group but to requesting client only */
+            /** @todo Do not send to mcast group but to requesting client only */
             err_t err = udp_sendto(upcb, p, &ipgroup, UHEJ_MCAST_PORT);
             if (err < 0) {
                 printf("uhej error: failed to send message: %s (%d)\n", lwip_strerr(err), err);
@@ -479,7 +479,7 @@ bool uhej_announce_udp(char *name, uint16_t port)
   */
 bool uhej_announce_tcp(char *name, uint16_t port)
 {
-    return false; // @todo
+    return false; /** @todo Implement TCP support */
 }
 
 /**
@@ -491,7 +491,7 @@ bool uhej_announce_tcp(char *name, uint16_t port)
   */
 bool uhej_announce_mcast(char *name, char *ip, uint16_t port)
 {
-    return false; // @todo
+    return false; /** @todo Implement multicast support */
 }
 
 /**
