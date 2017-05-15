@@ -8,7 +8,7 @@ I needed a way to query the network for firmware upgradeable ESP8266 nodes and t
 Include "uhej.h" and call the following to have your ESP8266 node advertise its services:
 
 ```
-    if (uhej_server_init() && 
+    if (uhej_server_init() &&
    	    uhej_announce_udp("tftp", 69) &&
 	    uhej_announce_udp("test service", 5000))
     {
@@ -20,7 +20,7 @@ Include "uhej.h" and call the following to have your ESP8266 node advertise its 
 Next, run ```uhdiscovery.py```:
 
 ```
-% ./python/uhdiscovery.py 
+% ./python/uhdiscovery.py
     172.16.3.154:5000   UDP      test service
     172.16.3.154:69     UDP      tftp
     172.16.3.203:69     UDP      tftp
@@ -37,8 +37,6 @@ Of course, you can have anything advertise a service. A python script:
 2017-02-20 23:46:07,605 - root - INFO - Service on 172.16.3.154:5000
 2017-02-20 23:46:07,605 - uhej_server - INFO - Advertising UDP 'test service' on port 5000
 ```
-
-Oh, currently you need by [ESP Open RTOS branch](https://github.com/kanflo/esp-open-rtos/tree/sdk_system_get_netif) for ```sdk_system_get_netif(...)```.
 
 ### But why?
 There are several UPnP protocols in the world already. Why another one? Weeell, I had some time over and wanted to play with multicast in [EOR](https://github.com/SuperHouse/esp-open-rtos) and Python. This thing sort of came along. But don't deploy it, lest you will create a DDOS amplifier. Will fix that someday...
