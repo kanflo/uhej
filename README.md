@@ -5,14 +5,14 @@ I needed a way to query the network for firmware upgradeable ESP8266 nodes and t
 
 ### Usage
 
-Include "uhej.h" and call the following to have your ESP8266 node advertise its services:
+Add this git as a submodule to your project. Copy "lwipopts.h" to your source directory, include "uhej.h" and call the following to have your ESP8266 node advertise its services:
 
 ```
-    if (uhej_server_init() &&
+    if (!(uhej_server_init() &&
    	    uhej_announce_udp("tftp", 69) &&
-	    uhej_announce_udp("test service", 5000))
+	    uhej_announce_udp("test service", 5000)))
     {
-       ...
+       printf("uHej registration failed\n");
     }
 
 ```
