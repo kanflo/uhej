@@ -38,6 +38,8 @@ Of course, you can have anything advertise a service. A python script:
 2017-02-20 23:46:07,605 - uhej_server - INFO - Advertising UDP 'test service' on port 5000
 ```
 
+Check [the example](https://github.com/kanflo/uhej-example) for more details.
+
 ### But why?
 There are several UPnP protocols in the world already. Why another one? Weeell, I had some time over and wanted to play with multicast in [EOR](https://github.com/SuperHouse/esp-open-rtos) and Python. This thing sort of came along. But don't deploy it, lest you will create a DDOS amplifier. Will fix that someday...
 
