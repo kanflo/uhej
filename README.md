@@ -5,7 +5,7 @@ I needed a way to query the network for firmware upgradeable ESP8266 nodes and t
 
 ### Usage
 
-Add this git as a submodule to your project. Copy "lwipopts.h" to your source directory, include "uhej.h" and call the following to have your ESP8266 node advertise its services:
+Add this git as well as the [python counterpart](https://github.com/kanflo/uhej-python) as submodules to your project. Copy "lwipopts.h" to your source directory, include "uhej.h" and call the following to have your ESP8266 node advertise its services:
 
 ```
     if (!(uhej_server_init() &&
@@ -20,7 +20,7 @@ Add this git as a submodule to your project. Copy "lwipopts.h" to your source di
 Next, run ```uhdiscovery.py```:
 
 ```
-% ./python/uhdiscovery.py
+% ./uhdiscovery.py
     172.16.3.154:5000   UDP      test service
     172.16.3.154:69     UDP      tftp
     172.16.3.203:69     UDP      tftp
@@ -30,7 +30,7 @@ Next, run ```uhdiscovery.py```:
 Of course, you can have anything advertise a service. A python script:
 
 ```
-% ./python/server.py
+% ./server.py
 2017-02-20 23:46:02,350 - root - INFO - Server starting
 2017-02-20 23:46:07,604 - uhej_server - INFO - uHej server thread
 2017-02-20 23:46:07,605 - uhej_server - INFO - uHej worker thread
