@@ -5,7 +5,14 @@ I needed a way to query the network for firmware upgradeable ESP8266 nodes and t
 
 ### Usage
 
-Add this git as well as the [python counterpart](https://github.com/kanflo/uhej-python) as submodules to your project. Copy "lwipopts.h" to your source directory, include "uhej.h" and call the following to have your ESP8266 node advertise its services:
+Add this git as well as the [python counterpart](https://github.com/kanflo/uhej-python) as submodules to your project. For ESP Open RTOS projects, add the following lines to your makefile:
+
+```
+PROGRAM_INC_DIR = . ./uhej
+PROGRAM_SRC_DIR=. ./uhej
+```
+
+Copy "lwipopts.h" to your source directory, include "uhej.h" and call the following to have your ESP8266 node advertise its services:
 
 ```
     if (!(uhej_server_init() &&
