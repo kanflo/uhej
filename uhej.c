@@ -257,7 +257,7 @@ static void decode_announce_frame(uint8_t *buf, uint32_t len)
   */
 static void decode_query_frame(uint8_t *buf, uint32_t len, struct udp_pcb *upcb)
 {
-    uhej_service_desc_t *d = NULL;
+    uhej_service_desc_t *service_desc = NULL;
     char name[MAX_SERVICE_NAME];
     uint8_t type;
     bool wildcard = strcmp(name, "*") == 0;
@@ -272,9 +272,9 @@ UNPACK_ERROR_HANDLER:
 UNPACK_SUCCESS_HANDLER:
     UNPACK_DONE();
 UNPACK_DONE_HANDLER:
-    d = find_service(name, type); /** @todo Handle wildcard query */
-    if (d || wildcard) {
-        if (d) {
+    service_desc = find_service(name, type); /** @todo Handle wildcard query */
+    if (service_desc || wildcard) {
+        if (service_desc) {
             printf("uhej: responding to query for %s service '%s'\n", g_service_names[type], name);
         } else {
             printf("uhej: responding to wildcard query \n");
@@ -289,10 +289,10 @@ UNPACK_DONE_HANDLER:
         PACK_START(buffer, MAX_ANNOUNCE_FRAME_SIZE);
         PACK_UINT32(UHEJ_MAGIC);
         PACK_UINT8(UHEJ_ANNOUNCE);
-        if (d) {
-            PACK_UINT8(d->type);
-            PACK_UINT16(d->port);
-            PACK_CSTR(d->name);
+        if (service_desc) {
+            PACK_UINT8(service_desc->type);
+            PACK_UINT16(service_desc->port);
+            PACK_CSTR(service_desc->name);
         } else {
             // Wildcard
             for (int i = 0; i < MAX_SERVICES; i++) {
