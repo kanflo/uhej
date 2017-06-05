@@ -93,7 +93,8 @@ char *g_service_names[] = { "UDP", "TCP", "MCAST" }; /** Must match uhej_service
 
 #define MAX_SERVICES      (8) /** Number of services we provide */
 #define MAX_SERVICE_NAME (16) /** Max service name length */
-//#define MAX_SUBSCRIBERS   (8) /** Max number of subscribers  @todo When the subscription model is implemented */
+/** @todo Fix when the subscription model is implemented */
+//#define MAX_SUBSCRIBERS   (8) /** Max number of subscribers */
 
 /** The service descriptor */
 typedef struct {
@@ -101,7 +102,8 @@ typedef struct {
     uhej_service_t type;
     uint16_t port;
     ip_addr_t ipgroup; /** Used for multicast services */
-//    ip_addr_t subscribers[MAX_SUBSCRIBERS]; /** @todo  When the subscription model is implemented */
+    /** @todo Fix when the subscription model is implemented */
+//    ip_addr_t subscribers[MAX_SUBSCRIBERS];
 } uhej_service_desc_t;
 
 /** The list of services provided */
