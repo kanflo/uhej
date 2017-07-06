@@ -43,8 +43,9 @@
 
 #define LWIP_IGMP 1
 #include <stdint.h>
-uint32_t my_rand(void); // Required by LWIP for multicast
-#define LWIP_RAND my_rand
+#include <esp/hwrand.h>
+#define LWIP_RAND hwrand
+
 /*
    -----------------------------------------------
    ---------- Platform specific locking ----------

@@ -429,14 +429,6 @@ static void uhej_task(void *arg)
 }
 #endif // UHEJ_HELLO_TASK
 
-/** @brief Required by LWIP for multicast
-  * @retval 32 bit random number
-  */
-uint32_t my_rand(void)
-{
-    return hwrand();
-}
-
 /**
   * @brief Initialize the uHej server
   * @retval true if init was succcessful
