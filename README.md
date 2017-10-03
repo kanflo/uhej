@@ -8,8 +8,8 @@ I needed a way to query the network for firmware upgradeable ESP8266 nodes and t
 Add this git as well as the [python counterpart](https://github.com/kanflo/uhej-python) as submodules to your project. For ESP Open RTOS projects, add the following lines to your makefile:
 
 ```
-PROGRAM_INC_DIR = . ./uhej
-PROGRAM_SRC_DIR=. ./uhej
+PROGRAM_INC_DIR = . uhej
+PROGRAM_SRC_DIR = . uhej
 ```
 
 Copy "lwipopts.h" to your source directory, include "uhej.h" and call the following to have your ESP8266 node advertise its services:
@@ -46,6 +46,8 @@ Of course, you can have anything advertise a service. A python script:
 ```
 
 Check [the example](https://github.com/kanflo/uhej-example) for more details.
+
+If you get ```Error, netif is null``` and ```uHej registration failed``` chances are you called ```uhej_server_init``` "too soon". It seems ```sdk_system_get_netif``` returns NULL if called to soon, eg. from ```user_init```. Add the call to the first task you create, see the uHej example.
 
 ### But why?
 There are several UPnP protocols in the world already. Why another one? Weeell, I had some time over and wanted to play with multicast in [EOR](https://github.com/SuperHouse/esp-open-rtos) and Python. This thing sort of came along. But don't deploy it, lest you will create a DDOS amplifier. Will fix that someday...
