@@ -197,7 +197,7 @@ static struct udp_pcb* mcast_join_group(char *group_ip, uint16_t group_port, voi
         udp_bind(upcb, IP_ADDR_ANY, group_port);
         struct netif* netif = sdk_system_get_netif(STATION_IF);
         if (!netif) {
-            printf("Error, netif is null");
+            printf("Error, netif is null\n");
             break;
         }
         if (!(netif->flags & NETIF_FLAG_IGMP)) {
@@ -208,7 +208,7 @@ static struct udp_pcb* mcast_join_group(char *group_ip, uint16_t group_port, voi
         ipaddr_aton(group_ip, &ipgroup);
         err_t err = igmp_joingroup(&netif->ip_addr, &ipgroup);
         if(ERR_OK != err) {
-            printf("Failed to join multicast group: %d", err);
+            printf("Failed to join multicast group: %d\n", err);
             break;
         }
         status = true;
