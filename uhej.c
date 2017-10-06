@@ -32,13 +32,9 @@
 #include <task.h>
 #include <timers.h>
 #include <queue.h>
-#include <lwip/pbuf.h>
 #include <lwip/udp.h>
-#include <lwip/tcp.h>
-#include <lwip/ip_addr.h>
-#include <lwip/api.h>
-#include <lwip/netbuf.h>
 #include <lwip/igmp.h>
+#include <lwip/ip_addr.h>
 #include <esp/hwrand.h>
 #include <esp8266.h>
 #include <espressif/esp_common.h>
@@ -182,7 +178,7 @@ static bool cancel_service(char *name, uhej_service_t type)
   * @param recv the lwip UDP callback
   * @retval udp_pcb* or NULL if joining failed
   */
-static struct udp_pcb* mcast_join_group(char *group_ip, uint16_t group_port, void (* recv)(void * arg, struct udp_pcb * upcb, struct pbuf * p, struct ip_addr * addr, u16_t port))
+static struct udp_pcb* mcast_join_group(char *group_ip, uint16_t group_port, void (* recv)(void * arg, struct udp_pcb * upcb, struct pbuf * p, const ip_addr_t * addr, u16_t port))
 {
     bool status = false;
     struct udp_pcb *upcb;
@@ -206,7 +202,8 @@ static struct udp_pcb* mcast_join_group(char *group_ip, uint16_t group_port, voi
         }
         ip_addr_t ipgroup;
         ipaddr_aton(group_ip, &ipgroup);
-        err_t err = igmp_joingroup(&netif->ip_addr, &ipgroup);
+        err_t err = igmp_joingroup_netif(netif, &ipgroup);
+//        err_t err = igmp_joingroup(&netif->ip_addr, &ipgroup);
         if(ERR_OK != err) {
             printf("Failed to join multicast group: %d\n", err);
             break;
@@ -257,16 +254,17 @@ static void decode_announce_frame(uint8_t *buf, uint32_t len)
   * @param upcb open socket to multicast group
   * @retval None
   */
-static void decode_query_frame(uint8_t *buf, uint32_t len, struct udp_pcb *upcb)
+static void decode_query_frame(uint8_t *buf, uint32_t len, struct udp_pcb *upcb, const ip_addr_t *addr, u16_t port)
 {
     uhej_service_desc_t *service_desc = NULL;
     char name[MAX_SERVICE_NAME];
     uint8_t type;
-    bool wildcard = strcmp(name, "*") == 0;
+    bool wildcard = false;
     _DBG(hexdump(buf, len);)
     UNPACK_START(buf, len);
     UNPACK_UINT8(type);
     UNPACK_CSTR(name, MAX_SERVICE_NAME);
+    wildcard = strcmp(name, "*") == 0;
     UNPACK_END();
 UNPACK_ERROR_HANDLER:
     printf("uhej error: query frame is corrupt\n");
@@ -274,6 +272,7 @@ UNPACK_ERROR_HANDLER:
 UNPACK_SUCCESS_HANDLER:
     UNPACK_DONE();
 UNPACK_DONE_HANDLER:
+    _DBG(printf("uhej query for name:%s type:%d (wildcard:%s)\n", name, type, wildcard?"yes":"no");)
     service_desc = find_service(name, type); /** @todo Handle wildcard query */
     if (service_desc || wildcard) {
         if (service_desc) {
@@ -320,8 +319,9 @@ UNPACK_DONE_HANDLER:
             printf("uhej error: failed to allocate %d byte transport buffer\n", len);
         } else {
             memcpy(p->payload, buffer, len);
-            /** @todo Do not send to mcast group but to requesting client only */
-            err_t err = udp_sendto(upcb, p, &ipgroup, UHEJ_MCAST_PORT);
+            err_t err = udp_sendto(upcb, p, addr, port);
+            printf("Sending response\n");
+
             if (err < 0) {
                 printf("uhej error: failed to send message: %s (%d)\n", lwip_strerr(err), err);
             }
@@ -351,7 +351,7 @@ static void decode_beacon_frame(uint8_t *buf, uint32_t len)
   * @param port the remote port from which the packet was received
   * @retval None
   */
-static void uhej_receive_callback(void *arg, struct udp_pcb *upcb, struct pbuf *p, struct ip_addr *addr, u16_t port)
+static void uhej_receive_callback(void *arg, struct udp_pcb *upcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
     if (p) {
         uint32_t magic;
@@ -367,15 +367,19 @@ static void uhej_receive_callback(void *arg, struct udp_pcb *upcb, struct pbuf *
             _DBG(hexdump(buf, 5);)
             switch(type) {
                 case UHEJ_HELLO:
+                    _DBG(printf("uHej hello\n");)
                     decode_hello_frame(&(buf[5]), p->len-5);
                     break;
                 case UHEJ_ANNOUNCE:
+                    _DBG(printf("uHej announce\n");)
                     decode_announce_frame(&(buf[5]), p->len-5);
                     break;
                 case UHEJ_QUERY:
-                    decode_query_frame(&(buf[5]), p->len-5, upcb);
+                    _DBG(printf("uHej query\n");)
+                    decode_query_frame(&(buf[5]), p->len-5, upcb, addr, port);
                     break;
                 case UHEJ_BEACON:
+                    _DBG(printf("uHej beacon\n");)
                     decode_beacon_frame(&(buf[5]), p->len-5);
                     break;
                 default:
