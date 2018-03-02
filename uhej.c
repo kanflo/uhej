@@ -183,6 +183,7 @@ static struct udp_pcb* mcast_join_group(char *group_ip, uint16_t group_port, voi
     bool status = false;
     struct udp_pcb *upcb;
 
+    sys_lock_tcpip_core();
     _DBG(printf("Joining mcast group %s:%d\n", group_ip, group_port);)
     do {
         upcb = udp_new();
@@ -203,7 +204,6 @@ static struct udp_pcb* mcast_join_group(char *group_ip, uint16_t group_port, voi
         ip_addr_t ipgroup;
         ipaddr_aton(group_ip, &ipgroup);
         err_t err = igmp_joingroup_netif(netif, &ipgroup);
-//        err_t err = igmp_joingroup(&netif->ip_addr, &ipgroup);
         if(ERR_OK != err) {
             printf("Failed to join multicast group: %d\n", err);
             break;
@@ -220,6 +220,7 @@ static struct udp_pcb* mcast_join_group(char *group_ip, uint16_t group_port, voi
         }
         upcb = NULL;
     }
+    sys_unlock_tcpip_core();
     return upcb;
 }
 
